@@ -30,8 +30,8 @@ type Draw struct {
 	Date     string    `json:"date"`
 	Front    []int     `json:"front"`
 	Back     []int     `json:"back"`
-	PoolUSD  float64   `json:"pool_usd,omitempty"`
-	SalesUSD float64   `json:"sales_usd,omitempty"`
+	PoolCNY  float64   `json:"pool_cny,omitempty"`
+	SalesCNY float64   `json:"sales_cny,omitempty"`
 	DrawnAt  time.Time `json:"-"`
 }
 

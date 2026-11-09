@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,20 +17,28 @@ import (
 	"github.com/veriyoung/dlt-tool/internal/analyze"
 	"github.com/veriyoung/dlt-tool/internal/draw"
 	"github.com/veriyoung/dlt-tool/internal/pick"
+	"github.com/veriyoung/dlt-tool/internal/source"
 )
 
 const usage = `dlt - 大乐透历史统计与选号工具
 
 用法:
+  dlt fetch  [-data draws.json] [-pages N] [-full]
   dlt import -file tickets.csv [-data draws.json]
   dlt stats  [-data draws.json] [-json]
   dlt pick   [-data draws.json] [-n 5] [条件...] [-json]
 
 子命令:
+  fetch   从体彩官网公开接口拉取开奖历史，写入本地数据集
   import  导入开奖数据。每行格式 issue,date,front,back
           例如: 24001,2024-01-01,5 3 1 4 2,9 3
   stats   输出历史统计（频次、冷热、遗漏、和值、奇偶、连号）
   pick    生成满足约束的号码
+
+fetch 参数:
+  -pages N   只拉取前 N 页（每页 30 期）
+  -full      拉取全部历史（约 99 页）
+  默认只拉取第 1 页，用于快速增量更新。
 
 pick 条件:
   -odd-even 3:2        前区奇偶比
@@ -47,6 +56,7 @@ pick 条件:
 说明:
   本工具只做历史统计与约束随机采样。大乐透每期开奖相互独立，
   一等奖概率固定为 1/21425712，历史数据不构成对下一期的预测。
+  fetch 数据来自体彩官方公开网页接口，仅供个人统计分析使用。
 `
 
 // ticketPrice is the face value of one Super Lotto ticket in CNY.
@@ -59,6 +69,8 @@ func main() {
 	}
 	var err error
 	switch os.Args[1] {
+	case "fetch":
+		err = runFetch(os.Args[2:])
 	case "import":
 		err = runImport(os.Args[2:])
 	case "stats":
@@ -76,6 +88,87 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
+}
+
+func runFetch(args []string) error {
+	fs := flag.NewFlagSet("fetch", flag.ExitOnError)
+	dataPath := fs.String("data", "data/draws.json", "dataset path")
+	pages := fs.Int("pages", 1, "number of pages to fetch, 30 draws per page")
+	full := fs.Bool("full", false, "fetch the entire history, ignoring -pages")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if !*full && *pages <= 0 {
+		return fmt.Errorf("-pages must be positive, got %d", *pages)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	client := source.NewClient()
+	store, err := draw.Load(*dataPath)
+	if err != nil {
+		return err
+	}
+	before := len(store.Draws)
+
+	fetched := 0
+	apply := func(batch []draw.Draw) error {
+		for _, d := range batch {
+			if err := store.Upsert(d); err != nil {
+				return err
+			}
+			fetched++
+		}
+		return nil
+	}
+	saveBestEffort := func() {
+		if fetched == 0 {
+			return
+		}
+		if err := store.Save(*dataPath); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: 保存部分数据失败:", err)
+		}
+	}
+
+	if *full {
+		all, err := client.FetchAll(ctx, func(page, pages, got int) {
+			fmt.Fprintf(os.Stderr, "\r拉取第 %d/%d 页，已获取 %d 期", page, pages, got)
+		})
+		fmt.Fprintln(os.Stderr)
+		if len(all) > 0 {
+			if applyErr := apply(all); applyErr != nil {
+				return applyErr
+			}
+		}
+		if err != nil {
+			saveBestEffort()
+			return fmt.Errorf("拉取中断，已保存 %d 期: %w", fetched, err)
+		}
+	} else {
+		for page := 1; page <= *pages; page++ {
+			batch, _, err := client.Page(ctx, page)
+			if err != nil {
+				saveBestEffort()
+				return fmt.Errorf("拉取第 %d 页失败（已保存 %d 期）: %w", page, fetched, err)
+			}
+			if len(batch) == 0 {
+				break
+			}
+			if err := apply(batch); err != nil {
+				return err
+			}
+			if client.Pause > 0 && page < *pages {
+				time.Sleep(client.Pause)
+			}
+		}
+	}
+
+	if err := store.Save(*dataPath); err != nil {
+		return err
+	}
+	fmt.Printf("抓取 %d 期，数据集 %d -> %d 期，已保存到 %s\n", fetched, before, len(store.Draws), *dataPath)
+	return nil
 }
 
 func runImport(args []string) error {

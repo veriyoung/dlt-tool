@@ -27,13 +27,30 @@ go build -o bin/dlt ./cmd/dlt
 
 ## 数据
 
-程序不内置数据，也不会伪造数据。`data/example.csv` 只是**格式示例**，其中的数字不是真实开奖结果，用前必须替换。
+程序不内置虚构数据。`data/example.csv` 只是**格式示例**，其中的数字不是真实开奖结果，可用真实数据替换。
 
-### 获取真实数据
+### 自动抓取真实数据
 
-体彩官网公开每期开奖结果，从「大乐透」历史开奖页面可以查到。第三方也有公开接口。抓取时控制频率，不要给站点造成压力。
+```bash
+# 增量更新：只拉最新一页（100 期）
+./bin/dlt fetch -data data/draws.json
 
-把数据整理成如下格式，每行一期：
+# 首次使用，拉取全部历史（约 2900+ 期）
+./bin/dlt fetch -data data/draws.json -full
+
+# 只拉前 N 页
+./bin/dlt fetch -data data/draws.json -pages 3
+```
+
+数据来源是体彩官方站点使用的公开历史开奖接口 `webapi.sporttery.cn`。抓取写入 `data/draws.json`，与 `import` 共用同一个数据集，按期号增量覆盖。
+
+抓取参数针对该接口的反爬策略做了适配：每页 100 条、页间间隔 5 秒、遇 403/429/5xx 指数退避重试。全量约 30 页，耗时 2-3 分钟。如果抓取中途被拦截，已经拿到的数据会立即落盘，下次运行会接着补全，不会白跑。
+
+请保持默认的间隔参数。缩短间隔或并发抓取会触发 WAF 封禁，且给对手方站点造成不必要的压力。
+
+### 手动导入
+
+也可以自己整理数据，每行一期：
 
 ```
 issue,date,front,back
@@ -48,13 +65,11 @@ issue,date,front,back
 
 前区和后区也可以合并成第 3 列 7 个号码，程序会自动拆分。
 
-### 导入
-
 ```bash
 ./bin/dlt import -file real-draws.csv -data data/draws.json
 ```
 
-导入是增量的，同一期号会覆盖。数据存成一个 JSON 文件，几千期也只有几百 KB，不需要数据库。
+两种方式都是增量的，同一期号会覆盖。数据存成一个 JSON 文件，几千期也只有几百 KB，不需要数据库。
 
 ## 统计
 
@@ -161,5 +176,6 @@ cmd/dlt/            命令行入口
 internal/draw/      开奖记录模型、校验、数据存取
 internal/analyze/   统计与概率常量
 internal/pick/      约束采样与推荐
+internal/source/    官方历史开奖接口抓取
 data/example.csv    格式示例（非真实数据）
 ```
