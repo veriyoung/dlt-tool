@@ -11,7 +11,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/veriyoung/dlt-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
 )
 
 // Constraint narrows the sampled combination. Zero values impose no filter.

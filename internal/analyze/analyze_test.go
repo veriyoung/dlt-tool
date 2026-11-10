@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/veriyoung/dlt-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
 )
 
 func sample() []draw.Draw {

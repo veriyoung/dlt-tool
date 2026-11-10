@@ -1,3 +1,3 @@
-module github.com/veriyoung/dlt-tool
+module github.com/veriyoung/super-lotto-tool
 
 go 1.25

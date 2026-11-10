@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/veriyoung/dlt-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
 )
 
 // GameNoSuperLotto is the game identifier for 超级大乐透.

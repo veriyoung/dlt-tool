@@ -2,6 +2,15 @@
 
 体彩大乐透（前区 1-35 选 5，后区 1-12 选 2）的历史统计与约束随机选号工具。
 
+一条命令拉取真实开奖数据，做统计分析，按约束随机选号。
+
+```bash
+go build -o bin/dlt ./cmd/dlt
+./bin/dlt fetch -data data/draws.json -full   # 拉取全部历史开奖
+./bin/dlt stats -data data/draws.json         # 频次/冷热/遗漏/和值/奇偶
+./bin/dlt pick  -data data/draws.json -n 5    # 约束随机选号
+```
+
 ## 先说清楚边界
 
 本工具**不做预测**。

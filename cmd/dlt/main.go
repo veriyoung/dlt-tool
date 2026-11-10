@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/veriyoung/dlt-tool/internal/analyze"
-	"github.com/veriyoung/dlt-tool/internal/draw"
-	"github.com/veriyoung/dlt-tool/internal/pick"
-	"github.com/veriyoung/dlt-tool/internal/source"
+	"github.com/veriyoung/super-lotto-tool/internal/analyze"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/pick"
+	"github.com/veriyoung/super-lotto-tool/internal/source"
 )
 
 const usage = `dlt - 大乐透历史统计与选号工具

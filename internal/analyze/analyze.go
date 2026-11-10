@@ -9,7 +9,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/veriyoung/dlt-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
 )
 
 // PrizeOdds are the exact probabilities for one ticket, independent of history.

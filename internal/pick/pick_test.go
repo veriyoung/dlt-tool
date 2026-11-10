@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/veriyoung/dlt-tool/internal/draw"
+	"github.com/veriyoung/super-lotto-tool/internal/draw"
 )
 
 func fixedRand(seed int64) *rand.Rand { return rand.New(rand.NewSource(seed)) }
