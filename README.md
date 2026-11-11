@@ -11,6 +11,10 @@ go build -o bin/dlt ./cmd/dlt
 ./bin/dlt pick  -data data/draws.json -n 5    # 约束随机选号
 ```
 
+仓库已内置完整开奖历史（2945 期，2007 年首期至最近一期），克隆后可直接使用，无需先抓取。
+
+完整使用说明见 [`docs/usage.md`](docs/usage.md)。
+
 ## 先说清楚边界
 
 本工具**不做预测**。
@@ -36,15 +40,28 @@ go build -o bin/dlt ./cmd/dlt
 
 ## 数据
 
-程序不内置虚构数据。`data/example.csv` 只是**格式示例**，其中的数字不是真实开奖结果，可用真实数据替换。
+仓库已附带 `data/draws.json`，内含从 2007 年首期到最近一期的完整开奖历史（2945 期），克隆后即可直接使用，无需先抓取。
 
-### 自动抓取真实数据
+`data/example.csv` 是 CSV 导入格式的示例（非真实数据）。
+
+### 直接使用仓库内置数据
+
+```bash
+git clone https://github.com/veriyoung/super-lotto-tool.git
+cd super-lotto-tool
+go build -o bin/dlt ./cmd/dlt
+./bin/dlt stats -data data/draws.json
+```
+
+### 更新数据
+
+仓库里的数据是某个时间点的快照。想拉到最新一期，运行 `fetch` 做增量更新：
 
 ```bash
 # 增量更新：只拉最新一页（100 期）
 ./bin/dlt fetch -data data/draws.json
 
-# 首次使用，拉取全部历史（约 2900+ 期）
+# 首次使用或数据缺失，拉取全部历史（约 2900+ 期）
 ./bin/dlt fetch -data data/draws.json -full
 
 # 只拉前 N 页
@@ -186,5 +203,6 @@ internal/draw/      开奖记录模型、校验、数据存取
 internal/analyze/   统计与概率常量
 internal/pick/      约束采样与推荐
 internal/source/    官方历史开奖接口抓取
-data/example.csv    格式示例（非真实数据）
+data/draws.json     内置开奖历史（2007 首期至今，2945 期）
+data/example.csv    CSV 导入格式示例（非真实数据）
 ```
